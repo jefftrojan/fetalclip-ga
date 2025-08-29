@@ -1,0 +1,58 @@
+{
+  "dataset": {
+    "name": "HC18_FetalCLIP_FineTune",
+    "description": "Fine-tuning FetalCLIP on HC18 dataset for improved GA estimation",
+    "version": "1.0"
+  },
+  "paths": {
+    "training_images": "trainingset",
+    "test_images": "testset",
+    "training_csv": "training_set_pixel_size_and_HC.csv",
+    "test_csv": "test_set_pixel_size_and_HC.csv",
+    "fetalclip_weights": "../FetalCLIP_weights.pt",
+    "fetalclip_config": "../FetalCLIP_config.json",
+    "output_dir": "fine_tune_output",
+    "checkpoints_dir": "fine_tune_output/checkpoints",
+    "logs_dir": "fine_tune_output/logs"
+  },
+  "data": {
+    "image_size": 224,
+    "batch_size": 16,
+    "num_workers": 4,
+    "train_split": 0.8,
+    "val_split": 0.1,
+    "test_split": 0.1,
+    "augmentation": {
+      "enabled": true,
+      "color_jitter": [0.2, 0.2, 0.2, 0.2],
+      "clahe": true,
+      "shift_scale_rotate": {
+        "shift_limit": 0.2,
+        "scale_limit": 0.0,
+        "rotate_limit": 20
+      }
+    }
+  },
+  "model": {
+    "base_model": "ViT-L-14",
+    "learning_rate": 1e-5,
+    "weight_decay": 0.01,
+    "warmup_steps": 100,
+    "max_epochs": 50,
+    "early_stopping_patience": 10,
+    "gradient_clip_val": 1.0
+  },
+  "training": {
+    "mixed_precision": true,
+    "accumulate_grad_batches": 1,
+    "check_val_every_n_epoch": 1,
+    "save_top_k": 3,
+    "monitor": "val_loss",
+    "mode": "min"
+  },
+  "evaluation": {
+    "metrics": ["mae", "rmse", "r2"],
+    "save_predictions": true,
+    "generate_plots": true
+  }
+}
