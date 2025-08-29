@@ -197,14 +197,3 @@ This model and package are provided for **research and educational purposes**. P
 - HC18 dataset terms of use
 - Local regulations for medical AI
 
-## 🎉 Congratulations!
-
-You now have a **production-ready, fine-tuned FetalCLIP model** that can accurately predict gestational age from ultrasound images. This represents a **significant advancement** in fetal ultrasound analysis with **83% better performance** than baseline approaches.
-
-**Ready to revolutionize fetal ultrasound analysis with AI-powered accuracy!** 🏥✨
-
----
-
-**📧 Contact**: For questions about this model package
-**🔗 Repository**: [Link to source repository]
-**📊 Performance**: [Link to detailed metrics]
