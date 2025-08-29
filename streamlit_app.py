@@ -81,6 +81,16 @@ class FineTunedHC18Inference:
     def load_models(self):
         """Load the fine-tuned models"""
         try:
+            # Check if model files exist
+            required_files = ["fetalclip_config.json", "fetalclip_weights.pt", "ga_predictor_finetuned.pt"]
+            missing_files = [f for f in required_files if not os.path.exists(f)]
+            
+            if missing_files:
+                st.error(f"❌ Missing model files: {missing_files}")
+                st.info("Please ensure all model files are in the same directory as this script.")
+                self.model_loaded = False
+                return
+            
             with st.spinner("🔄 Loading fine-tuned models..."):
                 # Load FetalCLIP configuration
                 with open("fetalclip_config.json", 'r') as f:
@@ -88,13 +98,23 @@ class FineTunedHC18Inference:
                 
                 open_clip.factory._MODEL_CONFIGS["FetalCLIP"] = fetalclip_config
                 
-                # Create FetalCLIP model
+                # Create FetalCLIP model with custom configuration
                 self.fetalclip_model, _, _ = open_clip.create_model_and_transforms(
                     'ViT-L-14',
                     pretrained=None,
                     precision='fp32',
                     device='cpu'
                 )
+                
+                # Apply FetalCLIP's custom text configuration
+                if 'text_cfg' in fetalclip_config:
+                    text_cfg = fetalclip_config['text_cfg']
+                    if hasattr(self.fetalclip_model, 'text'):
+                        self.fetalclip_model.text.context_length = text_cfg.get('context_length', 77)
+                        self.fetalclip_model.text.vocab_size = text_cfg.get('vocab_size', 49408)
+                        self.fetalclip_model.text.width = text_cfg.get('width', 768)
+                        self.fetalclip_model.text.heads = text_cfg.get('heads', 12)
+                        self.fetalclip_model.text.layers = text_cfg.get('layers', 12)
                 
                 # Load FetalCLIP weights
                 checkpoint = torch.load("fetalclip_weights.pt", map_location='cpu')
@@ -109,8 +129,14 @@ class FineTunedHC18Inference:
                         cleaned_key = key
                     cleaned_state_dict[cleaned_key] = value
                 
-                # Load weights
-                self.fetalclip_model.load_state_dict(cleaned_state_dict, strict=False)
+                # Load weights with better error handling
+                try:
+                    self.fetalclip_model.load_state_dict(cleaned_state_dict, strict=False)
+                    st.success("✅ FetalCLIP weights loaded successfully!")
+                except Exception as e:
+                    st.warning(f"⚠️  Partial weight loading: {e}")
+                    st.info("Continuing with partial weights...")
+                
                 self.fetalclip_model.eval()
                 self.fetalclip_model = self.fetalclip_model.to(self.device)
                 
@@ -128,6 +154,9 @@ class FineTunedHC18Inference:
                 
         except Exception as e:
             st.error(f"❌ Error loading models: {e}")
+            st.info("💡 Tip: Make sure you have copied the model files from the training directory:")
+            st.info("   - fetalclip_weights.pt from the source FetalCLIP directory")
+            st.info("   - ga_predictor_finetuned.pt from fine_tune_output/checkpoints/")
             self.model_loaded = False
     
     def preprocess_image(self, image):
